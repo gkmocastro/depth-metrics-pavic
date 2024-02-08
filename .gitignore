@@ -1,0 +1,13 @@
+.env
+
+**/.ipynb_checkpoints/
+.vscode/
+.idea
+
+# ignore these types
+*.pyc
+*.out
+*.log
+*.mexa64
+*.pdf
+*.tar
