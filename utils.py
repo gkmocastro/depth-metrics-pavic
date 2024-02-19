@@ -139,7 +139,12 @@ def calculate_delta(gt_path, pred_path):
 
     #print("\nCalculando Delta:")
     #calculate_delta(gt_path, pred_path)
-    
+
+
+
+
+
+#Função usando o gt direto do hugging face     
 import os
 import numpy as np
 import glob
