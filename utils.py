@@ -1,23 +1,35 @@
 import numpy as np
+from scipy.optimize import least_squares
+from datasets import load_dataset
+import os
 
-def calculate_absrel(gt_data, pred_data):
-    
-    absrel = np.mean(np.abs(gt_data - pred_data) / gt_data)
-    
+def affine_least_squares(delta1, delta2):
+    def error_func(params, x, y):
+        a, b = params
+        y_pred = a * x + b
+        return np.ravel(y - y_pred)  
+
+    initial_params = [1.0, 0.0]  
+    result = least_squares(error_func, initial_params, args=(delta1, delta2))
+
+    a, b = result.x
+    return a, b
+
+def calculate_absrel(delta2, delta1):
+    a, b = affine_least_squares(delta1, delta2)
+    pred = delta1 * a + b
+    absrel = np.mean(np.abs(delta2 - pred) / delta2)
+
     return absrel
-
-
-def calculate_delta(gt_data, pred_data):
-    # Calcular Delta
-    max_ratio = np.maximum(gt_data / pred_data, pred_data / gt_data)
+def calculate_delta(delta2, delta1):
+    a, b = affine_least_squares(delta1, delta2)
+    pred = delta1 * a + b
+    max_ratio = np.maximum(delta2 / pred, pred / delta2)
     delta = max_ratio < 1.25
-
-    # Contar quantos valores resultaram em True
     num_true_values = np.count_nonzero(delta)
-    measures = num_true_values/ gt_data.size
+    measures = num_true_values / delta1.size
 
-    return delta, measures
-
+    return measures
 
 
 
