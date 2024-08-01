@@ -1,26 +1,12 @@
 import numpy as np
-from scipy.optimize import least_squares
-from datasets import load_dataset
 import os
+import matplotlib.pyplot as plt
+import cv2
+import glob
 
-def affine_least_squares(delta1, delta2):
-    def error_func(params, x, y):
-        a, b = params
-        y_pred = a * x + b
-        return np.ravel(y - y_pred)  
 
-    initial_params = [1.0, 0.0]  
-    result = least_squares(error_func, initial_params, args=(delta1, delta2))
-
-    a, b = result.x
-    return a, b
-
-def calculate_absrel(delta2, delta1):
-    a, b = affine_least_squares(delta1, delta2)
-    pred = delta1 * a + b
-    absrel = np.mean(np.abs(delta2 - pred) / delta2)
-
-    return absrel
+    
+    
 def calculate_delta(delta2, delta1):
     a, b = affine_least_squares(delta1, delta2)
     pred = delta1 * a + b
@@ -30,6 +16,64 @@ def calculate_delta(delta2, delta1):
     measures = num_true_values / delta1.size
 
     return measures
+
+
+def depth_infos(depth):
+
+    depth_dict = {
+        "unique_values": np.unique(depth),
+        "num_uniques": len(np.unique(depth)),
+        "max": np.nanmax(depth),
+        "min": np.nanmin(depth),
+        "shape": depth.shape,
+        "has_nan": np.isnan(depth).any(),
+        "dtype": depth.dtype
+    }
+
+
+    print('---- Depth Report ----')
+    print()
+    print(f"Unique values: {depth_dict['unique_values']}")
+    print(f"how many uniques: {depth_dict['num_uniques']}")
+    print(f"Max: {depth_dict['max']}")
+    print(f"Min: {depth_dict['min']}")
+    print(f"shape: {depth_dict['shape']}")
+    print(f"Has nan: {depth_dict['has_nan']}")
+    print(f"Dtype: {depth_dict['dtype']}")
+
+    return depth_dict
+
+def show_rgbd(depth, image, figsize=(16,8), fontsize=16):
+    depth_infos(depth)
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    ax1.imshow(image)
+    ax1.set_title("RGB", fontsize=fontsize)
+    ax2.imshow(depth, cmap="gray")
+    ax2.set_title("Depth", fontsize=fontsize)
+
+    plt.tight_layout()
+
+    plt.show()
+
+
+def get_sorted_files(directory, endswith):
+    """
+    Get a sorted list of filenames within a specified folder and subfolders with an determined ending
+
+    Args:
+        directory: folder to search
+        extension: desired pattern to match
+
+    Returns: A sorted list of filenames with the specified ending
+    """
+    pattern = os.path.join(directory, "**", f"*{endswith}")
+    files = glob.glob(pattern, recursive=True)
+    return sorted(files)
+
+
+
 
 
 
