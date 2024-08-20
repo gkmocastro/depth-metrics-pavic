@@ -72,9 +72,24 @@ def get_sorted_files(directory, endswith):
     files = glob.glob(pattern, recursive=True)
     return sorted(files)
 
+def normal(arr):
+    return np.uint8(((arr - arr.min())/(arr.max() - arr.min()))*255)
 
+def show_pred_gt(rgb, groundtruth, pred, figsize=(24,8), fontsize=16):
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=figsize)
+    ax1.imshow(rgb)
+    ax1.set_title("RGB", fontsize=fontsize)
+    ax2.imshow(normal(groundtruth), cmap="gray")
+    ax2.set_title("GT", fontsize=fontsize)
+    ax3.imshow(normal(pred), cmap="gray")
+    ax3.set_title("Pred", fontsize=fontsize)
 
+    plt.tight_layout()
 
+    plt.show()
+
+    depth_infos(groundtruth)
+    depth_infos(pred)
 
 
 
