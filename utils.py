@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import cv2
 import glob
+import matplotlib.ticker as ticker
 
 
     
@@ -33,15 +34,15 @@ def depth_infos(depth):
 
     print('---- Depth Report ----')
     print()
-    print(f"Unique values: {depth_dict['unique_values']}")
+    #print(f"Unique values: {depth_dict['unique_values']}")
     print(f"how many uniques: {depth_dict['num_uniques']}")
     print(f"Max: {depth_dict['max']}")
     print(f"Min: {depth_dict['min']}")
     print(f"shape: {depth_dict['shape']}")
-    print(f"Has nan: {depth_dict['has_nan']}")
+    #print(f"Has nan: {depth_dict['has_nan']}")
     print(f"Dtype: {depth_dict['dtype']}")
 
-    return depth_dict
+    return None
 
 def show_rgbd(depth, image, figsize=(16,8), fontsize=16):
     depth_infos(depth)
@@ -93,3 +94,104 @@ def show_pred_gt(rgb, groundtruth, pred, figsize=(24,8), fontsize=16):
 
 
 
+def abs_rel_error(img1, img2):
+  """
+  Calculates the absolute relative error between two images.
+
+  Args:
+    img1: The first image as a NumPy array.
+    img2: The second image as a NumPy array.
+
+  Returns:
+    The absolute relative error between the two images.
+  """
+
+  assert img1.shape == img2.shape, "Images must have the same shape"
+
+  diff = np.abs(img1 - img2)
+  rel_diff = diff / (img2 + 1e-8)  # Add a small value to avoid division by zero
+  abs_rel = np.mean(rel_diff)
+  return abs_rel
+
+def cap_values(image, lower_percentile=0, upper_percentile=99):
+    # Calculate the lower and upper percentile values
+    lower_value = np.percentile(image, lower_percentile)
+    upper_value = np.percentile(image, upper_percentile)
+
+    # Cap the values
+    capped_image = np.clip(image, lower_value, upper_value)
+
+    return capped_image
+
+def plot_histogram(image, ):
+    # Flatten the image to a 1D array
+    flattened_image = image.flatten()
+    bins = 1000
+    # Calculate the minimum and maximum values of the image
+    min_val = np.min(flattened_image)
+    max_val = np.max(flattened_image)
+    
+    # Plot the histogram
+    plt.hist(flattened_image, bins=bins, range=(min_val, max_val), color='blue', alpha=0.7)
+    plt.title('Histogram')
+    plt.xlabel('Pixel Values')
+    plt.ylabel('Frequency')
+    plt.show()
+
+def normalize_depth(depth):
+   maxd = depth.max()
+   mind = depth.min()
+
+   return (depth - mind)/(maxd - mind)
+
+
+def depth_report(rgb, depth, pred, cap=False, uint=True):
+
+    flattened_image = depth.flatten()
+    bins = 1000
+    # Calculate the minimum and maximum values of the image
+    min_val = np.min(flattened_image)
+    max_val = np.max(flattened_image)
+    
+
+    
+    if uint: # if uint=true, transforma tudo para uint8 para visualizar legal
+        pred_vis = normal(pred)
+        if cap:
+            depth_vis = cap_values(depth, 1, 99)
+            depth_vis = normal(depth_vis)
+        else:
+            depth_vis = normal(depth)
+    else: 
+        pred_vis = pred
+        depth_vis = depth
+    
+
+    fig, axes = plt.subplots(2,2, figsize=(8,6))
+
+    axes[0,0].imshow(rgb)
+    axes[0,0].set_title("RGB")
+    axes[0,0].set_xticks([])
+    axes[0,0].set_yticks([])
+
+    axes[0,1].imshow(pred_vis, cmap='gray')
+    axes[0,1].set_title("Pred (Visualization)")
+    axes[0,1].set_xticks([])
+    axes[0,1].set_yticks([])
+
+    axes[1,1].hist(flattened_image, bins=bins, range=(min_val, max_val), color='blue', alpha=.7)
+    axes[1,1].set_title("Depth Histogram")
+    axes[1,1].yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
+    axes[1,1].yaxis.get_major_formatter().set_scientific(True)
+    axes[1,1].yaxis.get_major_formatter().set_powerlimits((0, 0))
+    
+
+    axes[1,0].imshow(depth_vis, cmap="gray")
+    axes[1,0].set_title("Depth (Visualization)")
+    axes[1,0].set_xticks([])
+    axes[1,0].set_yticks([])
+    
+    plt.tight_layout()
+    plt.show()
+    depth_infos(depth)
+    depth_infos(pred)
