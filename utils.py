@@ -6,19 +6,6 @@ import glob
 import matplotlib.ticker as ticker
 
 
-    
-    
-def calculate_delta(delta2, delta1):
-    a, b = affine_least_squares(delta1, delta2)
-    pred = delta1 * a + b
-    max_ratio = np.maximum(delta2 / pred, pred / delta2)
-    delta = max_ratio < 1.25
-    num_true_values = np.count_nonzero(delta)
-    measures = num_true_values / delta1.size
-
-    return measures
-
-
 def depth_infos(depth):
 
     depth_dict = {
@@ -95,25 +82,53 @@ def show_pred_gt(rgb, groundtruth, pred, figsize=(24,8), fontsize=16):
 
 
 def abs_rel_error(img1, img2):
-  """
-  Calculates the absolute relative error between two images.
+    """
+    Calculates the absolute relative error between two images.
 
-  Args:
+    Args:
     img1: The first image as a NumPy array.
     img2: The second image as a NumPy array.
 
-  Returns:
+    Returns:
     The absolute relative error between the two images.
-  """
+    """
 
-  assert img1.shape == img2.shape, "Images must have the same shape"
+    img1 = np.squeeze(img1)
+    img2 = np.squeeze(img2)
 
-  diff = np.abs(img1 - img2)
-  rel_diff = diff / (img2 + 1e-8)  # Add a small value to avoid division by zero
-  abs_rel = np.mean(rel_diff)
-  return abs_rel
+    diff = np.abs(img1 - img2)
+    rel_diff = diff / (img2 + 1e-8)  # Add a small value to avoid division by zero
+    abs_rel = np.mean(rel_diff)
+    return abs_rel
 
 def cap_values(image, lower_percentile=0, upper_percentile=99):
+    """
+    Caps the values of an image array based on specified lower and upper percentiles.
+
+    This function calculates the values at the specified lower and upper percentiles 
+    of the input image array and then caps the image values. Any pixel value below the 
+    lower percentile is set to the lower percentile value, and any value above the 
+    upper percentile is set to the upper percentile value.
+
+    Parameters:
+    -----------
+    image : numpy.ndarray
+        The input image array to be capped.
+    
+    lower_percentile : float, optional
+        The lower percentile value for capping. Any pixel value below this percentile 
+        will be set to the corresponding percentile value. Default is 0.
+    
+    upper_percentile : float, optional
+        The upper percentile value for capping. Any pixel value above this percentile 
+        will be set to the corresponding percentile value. Default is 99.
+
+    Returns:
+    --------
+    numpy.ndarray
+        The capped image array with pixel values adjusted to be within the specified 
+        percentile range.
+    """
     # Calculate the lower and upper percentile values
     lower_value = np.percentile(image, lower_percentile)
     upper_value = np.percentile(image, upper_percentile)
@@ -146,7 +161,38 @@ def normalize_depth(depth):
 
 
 def depth_report(rgb, depth, pred, cap=False, uint=True):
+    """
+    Generates a visual and statistical report for RGB, depth, and predicted depth images.
 
+    This function creates a 2x2 plot that includes the RGB image, the predicted depth image, 
+    the actual depth image, and a histogram of the depth values. It also optionally normalizes 
+    the depth and predicted depth images for better visualization. 
+
+    Parameters:
+    -----------
+    rgb : numpy.ndarray
+        The input RGB image array.
+    
+    depth : numpy.ndarray
+        The ground truth depth image array.
+    
+    pred : numpy.ndarray
+        The predicted depth image array.
+    
+    cap : bool, optional
+        If True, caps the values of the depth image to a specified percentile range (1st to 99th 
+        percentile) for visualization purposes. Default is False.
+    
+    uint : bool, optional
+        If True, converts the depth and predicted depth images to `uint8` format for better 
+        visualization. Default is True.
+
+    Returns:
+    --------
+    None
+        The function displays the report with the RGB image, predicted depth, depth histogram, 
+        and the depth image visualization. It does not return any value.
+    """
     flattened_image = depth.flatten()
     bins = 1000
     # Calculate the minimum and maximum values of the image
@@ -195,3 +241,24 @@ def depth_report(rgb, depth, pred, cap=False, uint=True):
     plt.show()
     depth_infos(depth)
     depth_infos(pred)
+
+
+def generate_flat_array(depth, mask):
+    flat_depth = depth.flatten()
+    flat_mask = mask.astype(bool).flatten()
+    return flat_depth[flat_mask]
+
+
+def align_depth(gt, pred, mask, return_depth=False, mask_output=False):
+    flat_gt_masked = generate_flat_array(gt, mask)
+    flat_pred_masked = generate_flat_array(pred, mask)
+    A = np.vstack([flat_gt_masked, np.ones(len(flat_gt_masked))]).T
+    s, t = np.linalg.lstsq(A, flat_pred_masked, rcond=None)[0]
+
+    if return_depth:
+        aligned =  1/((pred - t) / s)
+    else:
+        aligned = (pred - t) / s
+
+    if mask_output:
+        return aligned*(mask.reshape((mask.shape[0], mask.shape[1])))
