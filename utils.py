@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import cv2
 import glob
 import matplotlib.ticker as ticker
 
@@ -46,6 +45,7 @@ def show_rgbd(depth, image, figsize=(16,8), fontsize=16):
     plt.show()
 
 
+# future work: use pathlib instead
 def get_sorted_files(directory, endswith):
     """
     Get a sorted list of filenames within a specified folder and subfolders with an determined ending
@@ -105,23 +105,16 @@ def cap_values(image, lower_percentile=0, upper_percentile=99):
     """
     Caps the values of an image array based on specified lower and upper percentiles.
 
-    This function calculates the values at the specified lower and upper percentiles 
-    of the input image array and then caps the image values. Any pixel value below the 
-    lower percentile is set to the lower percentile value, and any value above the 
-    upper percentile is set to the upper percentile value.
-
     Parameters:
     -----------
     image : numpy.ndarray
         The input image array to be capped.
     
     lower_percentile : float, optional
-        The lower percentile value for capping. Any pixel value below this percentile 
-        will be set to the corresponding percentile value. Default is 0.
+        The lower percentile value for capping. 
     
     upper_percentile : float, optional
-        The upper percentile value for capping. Any pixel value above this percentile 
-        will be set to the corresponding percentile value. Default is 99.
+        The upper percentile value for capping. 
 
     Returns:
     --------
@@ -163,10 +156,6 @@ def normalize_depth(depth):
 def depth_report(rgb, depth, pred, cap=False, uint=True):
     """
     Generates a visual and statistical report for RGB, depth, and predicted depth images.
-
-    This function creates a 2x2 plot that includes the RGB image, the predicted depth image, 
-    the actual depth image, and a histogram of the depth values. It also optionally normalizes 
-    the depth and predicted depth images for better visualization. 
 
     Parameters:
     -----------
@@ -262,3 +251,44 @@ def align_depth(gt, pred, mask, return_depth=False, mask_output=False):
 
     if mask_output:
         return aligned*(mask.reshape((mask.shape[0], mask.shape[1])))
+    
+
+def calculate_delta(pred, gt, mask, threshold=1.25):
+    """
+    Calculates the delta depth accuracy for depth estimation with a mask.
+
+    Parameters:
+    -----------
+    pred : numpy.ndarray
+        The predicted depth image array.
+    
+    gt : numpy.ndarray
+        The ground truth depth image array.
+    
+    mask : numpy.ndarray
+        A binary mask array where pixels with a value of 1 are considered in the calculation 
+        and pixels with a value of 0 are ignored.
+    
+    threshold : float, optional
+        The threshold for delta accuracy. Default is 1.25.
+
+    Returns:
+    --------
+    float
+        The delta depth accuracy for the masked pixels, which is the proportion of masked pixels 
+        where the ratio between the predicted and ground truth depth is within the given threshold.
+    """
+    err = np.zeros_like(pred, dtype=np.float64)
+
+    err[mask == 1] = np.maximum(
+        pred[mask==1] / gt[mask==1],
+        gt[mask==1] / pred [mask==1],
+    )
+
+    err[mask == 1] = (err[mask == 1] < threshold)
+
+    p = np.sum(err) / np.sum(mask)
+
+    return 100 * np.mean(p)
+
+    
