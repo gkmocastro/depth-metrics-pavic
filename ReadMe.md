@@ -1,5 +1,7 @@
 # Depth Metrics
 
+## Comportamento esperado
+
 This repository/notebook aims to implement the affine invariant protocol for relative monocular depth estimation models
 
 - Step 1: Load the data.
@@ -12,11 +14,11 @@ This repository/notebook aims to implement the affine invariant protocol for rel
 
 - Step 5: Output the results in pandas dataframe and figures.  
 
-### Coisas pra fazer:
+##  Coisas pra fazer:
 
-1) **Zero Division**: Modificar cálculos para evitar divisão por zero  (check)
+1) **Zero Division**: Modificar cálculos para evitar divisão por zero  :white_check_mark:
 
-2) **Métricas**: implementar o código para outras métricas (delta123, RMSE) (check)
+2) **Métricas**: implementar o código para outras métricas (delta123, RMSE) ![](https://geps.dev/progress/80)
   
 3) **Loop de teste**: fazer rodar para todas as imagens do dataset   
 
