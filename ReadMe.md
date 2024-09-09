@@ -18,9 +18,12 @@ This repository/notebook aims to implement the affine invariant protocol for rel
 
 1) **Zero Division**: Modificar cálculos para evitar divisão por zero  :white_check_mark:
 
-2) **Métricas**: implementar o código para outras métricas (delta123, RMSE) ![](https://geps.dev/progress/80)
+2) **Métricas**: implementar o código para outras métricas (delta123, RMSE)   ![](https://geps.dev/progress/80)
+   1) Visualização: Pode cortar os valores extremantes da imagem para avaliação ou para visualização?
+   2) Problema: O método de alinhamento não funciona para imagens externas. A transferência para disparidade também não funciona.
   
 3) **Loop de teste**: fazer rodar para todas as imagens do dataset   
+   
 
 4) **Saída**: salvar em dataframe  
    1) Dataframe com delta, absrel e...

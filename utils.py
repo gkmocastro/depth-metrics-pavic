@@ -243,7 +243,7 @@ def align_depth(gt, pred, mask, return_depth=False, mask_output=False):
     flat_pred_masked = generate_flat_array(pred, mask)
     A = np.vstack([flat_gt_masked, np.ones(len(flat_gt_masked))]).T
     s, t = np.linalg.lstsq(A, flat_pred_masked, rcond=None)[0]
-
+ 
     if return_depth:
         aligned =  1/((pred - t) / s)
     else:
