@@ -79,20 +79,18 @@ def show_pred_gt(rgb, groundtruth, pred, figsize=(24,8), fontsize=16):
     depth_infos(groundtruth)
     depth_infos(pred)
 
+def abs_rel_error_mask(img1, img2, mask):
+    img1 = np.squeeze(img1)
+    img2 = np.squeeze(img2)
 
+    rel_diff = np.zeros_like(img1)
+    diff = np.zeros_like(img1)
+
+    diff[mask == 1] = np.abs(img1[mask==1] - img2[mask==1])
+    rel_diff[mask==1] = diff[mask==1] / (img2[mask==1])# + 1e-8)  # Add a small value to avoid division by zero
+    return np.mean(rel_diff)
 
 def abs_rel_error(img1, img2):
-    """
-    Calculates the absolute relative error between two images.
-
-    Args:
-    img1: The first image as a NumPy array.
-    img2: The second image as a NumPy array.
-
-    Returns:
-    The absolute relative error between the two images.
-    """
-
     img1 = np.squeeze(img1)
     img2 = np.squeeze(img2)
 
@@ -131,9 +129,9 @@ def cap_values(image, lower_percentile=0, upper_percentile=99):
 
     return capped_image
 
-def plot_histogram(image, ):
+def plot_histogram(image, mask):
     # Flatten the image to a 1D array
-    flattened_image = image.flatten()
+    flattened_image = generate_flat_array(image, mask)
     bins = 1000
     # Calculate the minimum and maximum values of the image
     min_val = np.min(flattened_image)
@@ -153,40 +151,18 @@ def normalize_depth(depth):
    return (depth - mind)/(maxd - mind)
 
 
-def depth_report(rgb, depth, pred, cap=False, uint=True):
-    """
-    Generates a visual and statistical report for RGB, depth, and predicted depth images.
+def depth_report(rgb, depth, pred, mask, cap=False, uint=True, bins=1000):
 
-    Parameters:
-    -----------
-    rgb : numpy.ndarray
-        The input RGB image array.
-    
-    depth : numpy.ndarray
-        The ground truth depth image array.
-    
-    pred : numpy.ndarray
-        The predicted depth image array.
-    
-    cap : bool, optional
-        If True, caps the values of the depth image to a specified percentile range (1st to 99th 
-        percentile) for visualization purposes. Default is False.
-    
-    uint : bool, optional
-        If True, converts the depth and predicted depth images to `uint8` format for better 
-        visualization. Default is True.
-
-    Returns:
-    --------
-    None
-        The function displays the report with the RGB image, predicted depth, depth histogram, 
-        and the depth image visualization. It does not return any value.
-    """
-    flattened_image = depth.flatten()
-    bins = 1000
+    flat_depth = generate_flat_array(depth, mask)
+    flat_pred = generate_flat_array(pred, mask)
     # Calculate the minimum and maximum values of the image
-    min_val = np.min(flattened_image)
-    max_val = np.max(flattened_image)
+    min_depth = np.min(flat_depth)
+    max_depth =  np.max(flat_depth)
+
+    min_pred = np.min(flat_pred)
+    max_pred =  np.max(flat_pred)
+
+    
     
 
     
@@ -202,30 +178,42 @@ def depth_report(rgb, depth, pred, cap=False, uint=True):
         depth_vis = depth
     
 
-    fig, axes = plt.subplots(2,2, figsize=(8,6))
+    fig, ((ax0, ax1, ax2), (ax3, ax4, ax5)) = plt.subplots(2,3, figsize=(12,8))
 
-    axes[0,0].imshow(rgb)
-    axes[0,0].set_title("RGB")
-    axes[0,0].set_xticks([])
-    axes[0,0].set_yticks([])
+    ax0.imshow(rgb)
+    ax0.set_title("RGB")
+    ax0.set_xticks([])
+    ax0.set_yticks([])
 
-    axes[0,1].imshow(pred_vis, cmap='gray')
-    axes[0,1].set_title("Pred (Visualization)")
-    axes[0,1].set_xticks([])
-    axes[0,1].set_yticks([])
+    ax3.imshow(mask, cmap="gray")
+    ax3.set_title("Mask")
+    ax3.set_xticks([])
+    ax3.set_yticks([])
 
-    axes[1,1].hist(flattened_image, bins=bins, range=(min_val, max_val), color='blue', alpha=.7)
-    axes[1,1].set_title("Depth Histogram")
-    axes[1,1].yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
-    axes[1,1].yaxis.get_major_formatter().set_scientific(True)
-    axes[1,1].yaxis.get_major_formatter().set_powerlimits((0, 0))
-    
+    ax2.imshow(pred_vis, cmap='gray')
+    ax2.set_title("Pred (Visualization)")
+    ax2.set_xticks([])
+    ax2.set_yticks([])
 
-    axes[1,0].imshow(depth_vis, cmap="gray")
-    axes[1,0].set_title("Depth (Visualization)")
-    axes[1,0].set_xticks([])
-    axes[1,0].set_yticks([])
-    
+    ax4.hist(flat_depth, bins=bins, range=(min_depth, max_depth), color='blue', alpha=.7)
+    ax4.set_title("Depth Histogram")
+    ax4.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
+    ax4.yaxis.get_major_formatter().set_scientific(True)
+    ax4.yaxis.get_major_formatter().set_powerlimits((0, 0))
+
+
+    ax5.hist(flat_pred, bins=bins, range=(min_pred, max_pred), color='blue', alpha=.7)
+    ax5.set_title("Pred Histogram")
+    ax5.yaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
+    ax5.yaxis.get_major_formatter().set_scientific(True)
+    ax5.yaxis.get_major_formatter().set_powerlimits((0, 0))
+
+
+    ax1.imshow(depth_vis, cmap="gray")
+    ax1.set_title("Depth (Visualization)")
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+
     plt.tight_layout()
     plt.show()
     depth_infos(depth)
@@ -255,35 +243,12 @@ def align_depth(gt, pred, mask, return_depth=False, mask_output=False):
     
 
 def calculate_delta(pred, gt, mask, threshold=1.25):
-    """
-    Calculates the delta depth accuracy for depth estimation with a mask.
 
-    Parameters:
-    -----------
-    pred : numpy.ndarray
-        The predicted depth image array.
-    
-    gt : numpy.ndarray
-        The ground truth depth image array.
-    
-    mask : numpy.ndarray
-        A binary mask array where pixels with a value of 1 are considered in the calculation 
-        and pixels with a value of 0 are ignored.
-    
-    threshold : float, optional
-        The threshold for delta accuracy. Default is 1.25.
-
-    Returns:
-    --------
-    float
-        The delta depth accuracy for the masked pixels, which is the proportion of masked pixels 
-        where the ratio between the predicted and ground truth depth is within the given threshold.
-    """
     err = np.zeros_like(pred, dtype=np.float64)
 
     err[mask == 1] = np.maximum(
         pred[mask==1] / gt[mask==1],
-        gt[mask==1] / pred [mask==1],
+        gt[mask==1] / pred[mask==1],
     )
 
     err[mask == 1] = (err[mask == 1] < threshold)
