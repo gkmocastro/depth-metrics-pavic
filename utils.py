@@ -79,16 +79,7 @@ def show_pred_gt(rgb, groundtruth, pred, figsize=(24,8), fontsize=16):
     depth_infos(groundtruth)
     depth_infos(pred)
 
-def abs_rel_error_mask(img1, img2, mask):
-    img1 = np.squeeze(img1)
-    img2 = np.squeeze(img2)
 
-    rel_diff = np.zeros_like(img1)
-    diff = np.zeros_like(img1)
-
-    diff[mask == 1] = np.abs(img1[mask==1] - img2[mask==1])
-    rel_diff[mask==1] = diff[mask==1] / (img2[mask==1])# + 1e-8)  # Add a small value to avoid division by zero
-    return np.mean(rel_diff)
 
 # def abs_rel_error(img1, img2):
 #     img1 = np.squeeze(img1)
@@ -260,6 +251,16 @@ def calculate_delta(pred, gt, mask, threshold=1.25):
 
     return 100 * np.mean(p)
 
+def abs_rel_error_mask(img1, img2, mask):
+    img1 = np.squeeze(img1)
+    img2 = np.squeeze(img2)
+
+    rel_diff = np.zeros_like(img1)
+    diff = np.zeros_like(img1)
+
+    diff[mask == 1] = np.abs(img1[mask==1] - img2[mask==1])
+    rel_diff[mask==1] = diff[mask==1] / (img2[mask==1])
+    return np.mean(rel_diff)
     
 def compute_scale_and_shift(prediction, target, mask):
     # h,w = prediction.shape
