@@ -22,7 +22,8 @@ This repository/notebook aims to implement the affine invariant protocol for rel
    1) Problema: O método de alinhamento não funciona para imagens externas. A transferência para disparidade também não funciona. ![](https://geps.dev/progress/100)
    2) Gerar Visualização de histograma sem valores zero da máscara. ![](https://geps.dev/progress/100)
   
-3) **Loop de teste**: fazer rodar para todas as imagens do dataset   
+3) **Loop de teste**: fazer rodar para todas as imagens do dataset  ![](https://geps.dev/progress/50) 
+   1) Métricas não estão condizentes com o paper. Testar rodar outros modelos para ver se o comportamento se mantem. 
    
 
 4) **Saída**: salvar em dataframe  

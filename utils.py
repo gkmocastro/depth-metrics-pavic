@@ -90,14 +90,14 @@ def abs_rel_error_mask(img1, img2, mask):
     rel_diff[mask==1] = diff[mask==1] / (img2[mask==1])# + 1e-8)  # Add a small value to avoid division by zero
     return np.mean(rel_diff)
 
-def abs_rel_error(img1, img2):
-    img1 = np.squeeze(img1)
-    img2 = np.squeeze(img2)
+# def abs_rel_error(img1, img2):
+#     img1 = np.squeeze(img1)
+#     img2 = np.squeeze(img2)
 
-    diff = np.abs(img1 - img2)
-    rel_diff = diff / (img2 + 1e-8)  # Add a small value to avoid division by zero
-    abs_rel = np.mean(rel_diff)
-    return abs_rel
+#     diff = np.abs(img1 - img2)
+#     rel_diff = diff / (img2 + 1e-8)  # Add a small value to avoid division by zero
+#     abs_rel = np.mean(rel_diff)
+#     return abs_rel
 
 def cap_values(image, lower_percentile=0, upper_percentile=99):
     """
@@ -261,3 +261,26 @@ def calculate_delta(pred, gt, mask, threshold=1.25):
     return 100 * np.mean(p)
 
     
+def compute_scale_and_shift(prediction, target, mask):
+    # h,w = prediction.shape
+    # system matrix: A = [[a_00, a_01], [a_10, a_11]]
+    a_00 = np.sum(mask * prediction * prediction, (0,1))
+    a_01 = np.sum(mask * prediction, (0,1))
+    a_11 = np.sum(mask, (0,1))
+
+    # right hand side: b = [b_0, b_1]
+    b_0 = np.sum(mask * prediction * target, (0,1))
+    b_1 = np.sum(mask * target, (0,1))
+
+    # solution: x = A^-1 . b = [[a_11, -a_01], [-a_10, a_00]] / (a_00 * a_11 - a_01 * a_10) . b
+    x_0 = np.zeros_like(b_0)
+    x_1 = np.zeros_like(b_1)
+
+    det = a_00 * a_11 - a_01 * a_01
+    # A needs to be a positive definite matrix.
+    valid = det > 0
+
+    x_0[valid] = (a_11[valid] * b_0[valid] - a_01[valid] * b_1[valid]) / det[valid]
+    x_1[valid] = (-a_01[valid] * b_0[valid] + a_00[valid] * b_1[valid]) / det[valid]
+
+    return x_0, x_1
