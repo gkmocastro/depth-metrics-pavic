@@ -26,7 +26,7 @@ This repository/notebook aims to implement the affine invariant protocol for rel
    1) Métricas não estão condizentes com o paper. Testar rodar outros modelos para ver se o comportamento se mantem. 
    
 
-4) **Saída**: salvar em dataframe  
+4) **Saída**: salvar em dataframe   ![](https://geps.dev/progress/80) 
    1) Dataframe com delta, absrel e...
 
 5) **Realizar testes**: Teste no código de teste
