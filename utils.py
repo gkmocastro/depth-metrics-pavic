@@ -24,7 +24,7 @@ def depth_infos(depth):
     print(f"how many uniques: {depth_dict['num_uniques']}")
     print(f"Max: {depth_dict['max']}")
     print(f"Min: {depth_dict['min']}")
-    print(f"shape: {depth_dict['shape']}")
+    #print(f"shape: {depth_dict['shape']}")
     #print(f"Has nan: {depth_dict['has_nan']}")
     print(f"Dtype: {depth_dict['dtype']}")
 
@@ -163,16 +163,19 @@ def depth_report(rgb, depth, pred, mask, cap=False, uint=True, bins=1000):
     max_pred =  np.max(flat_pred)
 
     
-    
+    flat_depth_cap = cap_values(flat_depth, 2, 98)
+    flat_pred_cap = cap_values(flat_pred, 2, 98)
 
-    
-    if uint: # if uint=true, transforma tudo para uint8 para visualizar legal
-        pred_vis = normal(pred)
+    #melhorar: nao funciona se quiser cap, mas nao uint, mas isso é irrelevante
+    if uint: 
         if cap:
+            pred_vis = cap_values(pred, 1, 99)
+            pred_vis = normal(pred_vis)
             depth_vis = cap_values(depth, 1, 99)
             depth_vis = normal(depth_vis)
         else:
             depth_vis = normal(depth)
+            pred_vis = normal(pred)
     else: 
         pred_vis = pred
         depth_vis = depth
@@ -216,8 +219,8 @@ def depth_report(rgb, depth, pred, mask, cap=False, uint=True, bins=1000):
 
     plt.tight_layout()
     plt.show()
-    depth_infos(depth)
-    depth_infos(pred)
+    depth_infos(flat_depth)
+    depth_infos(flat_pred)
 
 
 def generate_flat_array(depth, mask):
