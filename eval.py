@@ -13,8 +13,6 @@ diode_preds = Path("/home/gustavo/workstation/depth_estimation/data/outputs/DIOD
 
 
 
-
-
 def eval_diode(gt_path, mask_path, pred_path):
 
     filenames_depth = U.get_sorted_files(gt_path, "_depth.npy")
