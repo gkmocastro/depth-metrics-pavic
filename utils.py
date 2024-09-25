@@ -153,9 +153,6 @@ def depth_report(rgb, depth, pred, mask, cap=False, uint=True, bins=1000):
     min_pred = np.min(flat_pred)
     max_pred =  np.max(flat_pred)
 
-    
-    flat_depth_cap = cap_values(flat_depth, 2, 98)
-    flat_pred_cap = cap_values(flat_pred, 2, 98)
 
     #melhorar: nao funciona se quiser cap, mas nao uint, mas isso é irrelevante
     if uint: 
@@ -348,3 +345,31 @@ def depth2disparity(depth, return_mask=False):
         return disparity, non_negtive_mask
     else:
         return disparity
+    
+
+
+def percentile_mask(image, lower_percentile, upper_percentile):
+    """
+    Generates a mask for the pixels of a grayscale image that fall between the two specified percentiles.
+
+    Args:
+        image: 2D numpy array representing a grayscale image.
+        lower_percentile: Lower percentile (0-100) for masking.
+        upper_percentile: Upper percentile (0-100) for masking.
+
+    Returns:
+        mask: 2D binary numpy array with 1 where pixel values are between the two percentiles, and 0 elsewhere.
+    """
+
+    # Ensure the percentiles are between 0 and 100
+    if not (0 <= lower_percentile <= 100) or not (0 <= upper_percentile <= 100):
+        raise ValueError("Percentiles must be in the range [0, 100]")
+
+    # Get the pixel values at the given percentiles
+    lower_value = np.percentile(image, lower_percentile)
+    upper_value = np.percentile(image, upper_percentile)
+
+    # Create a binary mask where pixels are within the percentile range
+    mask = (image >= lower_value) & (image <= upper_value)
+    
+    return mask.astype(np.uint8)  # Convert boolean mask to uint8 (0 or 1)
